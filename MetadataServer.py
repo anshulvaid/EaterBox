@@ -49,7 +49,16 @@ class MetadataServerHandler():
 
     def getFile(self, filename):
         # Function to handle download request from file
-        pass
+        resp = file()
+        if filename in self.fileNameToHashList:
+        	resp.filename = filename
+        	resp.hashList = self.fileNameToHashList[filename]
+        	resp.status = responseType.OK
+        	print "MetaServer: file "+ filename + " found and all OK."
+        else:
+        	resp.status = responseType.ERROR
+        	print "MetaServer: file " + filename + " not found."
+        return resp
 
     def storeFile(self, file):
         # Function to handle upload request
@@ -60,13 +69,15 @@ class MetadataServerHandler():
 
         BlockHandler, transportB = self.getConnection(blockPort, "block")
         uResponse = BlockHandler.hasBlocks(file.hashList)
-
-        if uResponse == uploadResponseType.OK:
+        transportB.close()
+        if uResponse.status == uploadResponseType.OK:
             resp.status = uploadResponseType.OK
-            self.fileNameToHashList[file.filename] = file.hashlist
+            self.fileNameToHashList[file.filename] = file.hashList
+            print "MetaServer: All OK for file, " + file.filename
         else:
             resp.status = uploadResponseType.MISSING_BLOCKS
             resp.hashList = uResponse.hashList
+            print "MetaServer: Missing blocks for file, " + file.filename
         return resp
 
     def deleteFile(self, filename):

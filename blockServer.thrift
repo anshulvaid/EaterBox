@@ -23,7 +23,7 @@ struct hashBlocks {
 
 service BlockServerService {
 	response storeBlock(1: hashBlock hashblock),
-	hashBlock getBlock(1: string hash),
+	hashBlocks getBlocks(1: list<string> hash),
 	response deleteBlock(1: string hash)
 	uploadResponse hasBlocks(1: list<string> hashList)
 	// Add any procedure you need below
