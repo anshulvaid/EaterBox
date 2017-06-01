@@ -165,6 +165,22 @@ def getFile(filename):
     else:
         print "Download file failed: file not found"
     
+def deleteFile(filename):
+    global my_id, metaDataServerPorts
+    filename = my_id + "/" + filename
+    MetaHandler, transportM = getConnection(metaDataServerPorts[0], "meta")
+
+    thisFile = file()
+    thisFile.filename = filename
+    thisFile.status = responseType.OK
+
+    response = MetaHandler.deleteFile(thisFile)
+    if response.message == responseType.OK:
+        os.remove(filename)
+        print "File successfully deleted."
+    else:
+        print "File deletion failed."
+    transportM.close()
 
 if __name__ == "__main__":
 
@@ -188,6 +204,8 @@ if __name__ == "__main__":
             print "File " + fileName + " successfully uploaded."
     elif command.lower() == "download":
         getFile(fileName)
+    elif command.lower() == "delete":
+        deleteFile(fileName)
 
     '''
     Server information can be parsed from the config file

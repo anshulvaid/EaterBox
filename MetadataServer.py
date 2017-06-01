@@ -80,9 +80,17 @@ class MetadataServerHandler():
             print "MetaServer: Missing blocks for file, " + file.filename
         return resp
 
-    def deleteFile(self, filename):
-        # Function to handle download request from file
-        pass
+    def deleteFile(self, file):
+        # Function to handle delete request from file
+        resp =response()
+        if file.filename in self.fileNameToHashList:
+        	del self.fileNameToHashList[file.filename]
+        	resp.message = responseType.OK
+        	print "File successfully deleted."
+        else:
+        	resp.message = responseType.ERROR
+        	print "File metadata not found while deletion"
+        return resp
 
     def readServerPort(self):
         global blockPort
