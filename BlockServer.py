@@ -26,11 +26,30 @@ class BlockServerHandler():
         self.hashToChunkMap[hashBlock.hash] = hashBlock.block
         resp = response()
         resp.message = responseType.OK
+        print "BlockServer: blocks stored"
         return resp
 
-    def getBlock(self, hash):
+    def getBlocks(self, hash):
         # Retrieve block using hash, called by client during download
-        pass
+        hashBlocks = hashBlocks()
+        allOk = True
+        for hashString in hash:
+            hashblock = hashblock()
+            if hashString in self.hashToChunkMap:
+                hashblock.hash = hashString
+                hashblock.block = self.hashToChunkMap[hashString] 
+                hashblock.status = "OK" 
+            else:
+                hashblock.status = "ERROR"
+                allOk = False
+                print "BlockServer: Blocks missing"
+            hashBlocks.blocks.append(hashblock)
+            if allOK == False:
+                break
+        if allOk == True:
+            print "BlockServer: all blocks found"
+        return hashBlocks
+
 
     def deleteBlock(self, hash):
         # Delete the particular hash : block pair
@@ -40,10 +59,12 @@ class BlockServerHandler():
         uResponse = uploadResponse()
         uResponse.status = uploadResponseType.OK
         uResponse.hashList = []
+        print "hasBlock invoked"
         for hashV in hashList:
             if hashV not in self.hashToChunkMap:
                 uResponse.status = uploadResponseType.MISSING_BLOCKS
                 uResponse.hashList.append(hashV)
+                print "Meta -> Block: block missing"
         return uResponse
 
 

@@ -114,22 +114,73 @@ def uploadFile(filename):
             resp = BlockHandler.storeBlock(hashBlk)
             if resp.message == responseType.ERROR:
                 rsp.message = responseType.ERROR
-        
+            else:
+                print "Client: All blocks stored on BlockServer"
+        transportB.close()
         if rsp.message == responseType.OK:
             uResponse = MetaHandler.storeFile(thisFile)
             if uResponse.status == uploadResponseType.ERROR:
                 rsp.message = responseType.ERROR
-        transportB.close()
+            else:
+                print "Client: Metadata stored"
     else:
         rsp.message = responseType.ERROR
     
     transportM.close()
     return rsp
 
+def mergeChunksAndSaveFile(fileHashList, filename):
+    global my_id,globalHashToChunkMap
+    #newFile = open("client11"+'/'+filename, 'w')
+    newFile = open(filename, 'w')
+    for hashValue in fileHashList:
+        newFile.write(globalHashToChunkMap[hashValue])
+    newFile.close()
+    print "File " + filename + " successfully downloaded."
+
+
 def getFile(filename):
-    global my_id, metaDataServerPorts, blockServerPort
+    global my_id, metaDataServerPorts, blockServerPort,globalHashToChunkMap
     MetaHandler, transportM = getConnection(metaDataServerPorts[0], "meta")
+    filename = my_id + "/" + filename
+    downFile = MetaHandler.getFile(filename)
+    transportM.close()
+    if downFile.status == responseType.OK:
+        missingChunkList = []
+        allOk = True
+        for hashValue in downFile.hashList:
+            if hashValue not in globalHashToChunkMap:
+                missingChunkList.append(hashValue)
+        if missingChunkList:
+            BlockHandler, transportB = getConnection(blockServerPort, "block")
+            missingChunks = transportB.getBlocks(missingChunkList)
+            transportB.close()
+            for hashblock in missingChunks.blocks:
+                if hashBlock.status != "OK":
+                    print "Download file failed: file content incomplete"
+                    allOk = False
+                globalHashToChunkMap[hashBlock.hash] = hashBlock.block
+        if allOk == True:
+            mergeChunksAndSaveFile(downFile.hashList, filename)
+    else:
+        print "Download file failed: file not found"
     
+def deleteFile(filename):
+    global my_id, metaDataServerPorts
+    filename = my_id + "/" + filename
+    MetaHandler, transportM = getConnection(metaDataServerPorts[0], "meta")
+
+    thisFile = file()
+    thisFile.filename = filename
+    thisFile.status = responseType.OK
+
+    response = MetaHandler.deleteFile(thisFile)
+    if response.message == responseType.OK:
+        os.remove(filename)
+        print "File successfully deleted."
+    else:
+        print "File deletion failed."
+    transportM.close()
 
 if __name__ == "__main__":
 
@@ -147,8 +198,14 @@ if __name__ == "__main__":
 
     init(base_dir, config_file)
 
-    if command == "upload": 
-        uploadFile(fileName)
+    if command.lower() == "upload": 
+        resp = uploadFile(fileName)
+        if resp.message == uploadResponseType.OK:
+            print "File " + fileName + " successfully uploaded."
+    elif command.lower() == "download":
+        getFile(fileName)
+    elif command.lower() == "delete":
+        deleteFile(fileName)
 
     '''
     Server information can be parsed from the config file
